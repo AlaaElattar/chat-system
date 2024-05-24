@@ -10,7 +10,7 @@ class ChatsController < ApplicationController
             channel = RabbitmqService.channel
             begin
                 puts "HELLO BEFORE"
-                MessagePublisher.publish(channel,'chats',{application_id: @application.token, number: number, messages_count: 0 })
+                MessagePublisher.publish(channel,'chats',{application_id: @application.token, number: number, messages_count: 0 }.to_json)
                 puts "HELLO AFTER"
             rescue => e 
                 puts "Error publishing chat message #{e.message}"   
