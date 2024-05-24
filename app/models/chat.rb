@@ -1,5 +1,7 @@
 class Chat < ApplicationRecord
   belongs_to :application
-  has_many :messages, dependent: :destroy
-  validates_presence_of :number, :messages_count, :application_id
+  attribute :messages_count, :integer, default: 0
+  has_many :messages, dependent: :delete_all
+  validates :number, uniqueness: { scope: :application_id,
+    message: "Can't have duplicate chat numbers per app" }
 end

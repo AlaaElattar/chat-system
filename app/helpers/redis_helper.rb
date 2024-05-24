@@ -11,5 +11,9 @@ module RedisHelper
         value
     end
 
-      
+    def self.generate_message_number(chat_id)
+        key = "messages_count:#{chat_id}"
+        value = redis.incr(key)
+        value
+    end      
 end

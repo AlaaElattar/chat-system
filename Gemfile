@@ -67,3 +67,8 @@ group :test do
 end
 
 gem 'uuid'
+gem 'bunny'
+gem 'sneakers'
+gem 'sidekiq'
+gem 'sidekiq-cron'
+
