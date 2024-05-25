@@ -1,0 +1,151 @@
+version: "3.8"
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbit_mq_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+
+services:
+  mysql:
+    image: mysql
+    restart: always
+    ports:
+      - 33306:3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: StrongPassw0rd!
+      MYSQL_DATABASE: chat_system
+      MYSQL_USER: username
+      MYSQL_PASSWORD: StrongPassw0rd!
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "mysql"]
+      interval: 3s
+      retries: 10
+
+  redis:
+    image: redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      timeout: 10s
+      interval: 10s
+      retries: 10
+
+  rabbit_mq:
+    image: rabbitmq
+    restart: always
+    ports:
+      - 5673:5672
+    volumes:
+      - rabbit_mq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      retries: 10
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.3.2
+    ports:
+      - 9301:9200
+    volumes:
+      - elasticsearch_data:/var/lib/elasticsearch/data
+    environment:
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - xpack.monitoring.templates.enabled=false
+      - xpack.graph.enabled=false
+      - xpack.watcher.enabled=false
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail http://elasticsearch:9200 || exit 1",
+        ]
+      interval: 3s
+      retries: 10
+
+  web:
+    build: .
+    restart: always
+    ports:
+      - 3000:3000
+    command: bash -c "rm -f tmp/pids/server.pid && rails db:create && rails db:migrate && rails s -p 3000 -b '0.0.0.0'"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail http://web:3000/healthcheck || exit 1",
+        ]
+      interval: 3s
+      retries: 10
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbit_mq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - RAILS_ENV=development
+      - RAILS_LOG_TO_STDOUT=true
+      - DATABASE_HOST=mysql
+      - DATABASE_USERNAME=username
+      - DATABASE_PASSWORD=StrongPassw0rd!
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=elasticsearch:9200
+
+  sidekiq:
+    build: .
+    restart: always
+    command: bundle exec sidekiq
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    environment:
+      - RAILS_ENV=development
+      - RAILS_LOG_TO_STDOUT=true
+      - DATABASE_HOST=mysql
+      - DATABASE_USERNAME=username
+      - DATABASE_PASSWORD=StrongPassw0rd!
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=elasticsearch:9200
+
+  sneakers:
+    build: .
+    restart: always
+    command: bundle exec rake sneakers:run
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbit_mq:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    environment:
+      - RAILS_ENV=development
+      - RAILS_LOG_TO_STDOUT=true
+      - DATABASE_HOST=mysql
+      - DATABASE_USERNAME=username
+      - DATABASE_PASSWORD=StrongPassw0rd!
+      - RABBITMQ_URL=amqp://rabbit_mq:5672
+      - ELASTICSEARCH_URL=elasticsearch:9200

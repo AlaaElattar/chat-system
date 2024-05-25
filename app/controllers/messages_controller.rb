@@ -1,13 +1,14 @@
 class MessagesController < ApplicationController
     protect_from_forgery with: :null_session, if: -> { request.format.json? }
     skip_before_action :verify_authenticity_token, only: [:create]
+    before_action :get_application, :get_chat
 
     # POST /applications/:application_token/chats/:chat_number/messages
     def create
-        get_chat
         if @chat
             number = RedisHelper.generate_message_number(@chat.id)
-            MessagePublisher.publish('messages',{chat_id: @chat.id, number: number, body: message_params[:body]})
+            channel = RabbitmqService.channel
+            MessagePublisher.publish(channel ,'messages',{chat_id: @chat.number, number: number, body: message_params[:body]})
             render json: { number: number }, status: :created
         else
             render json: { error: "Invalid chat number" }, status: :unprocessable_entity
@@ -16,9 +17,9 @@ class MessagesController < ApplicationController
 
     # GET /applications/:application_token/chats/:chat_number/messages/:number
     def show
-        get_chat
         if @chat
-            @message = @chat.messages.find_by(number: params[:number])
+            puts "Number #{params[:number]}"
+            @message = Message.find_by(chat_id: @chat.number, number: params[:number])
             if @message
                 render json: @message, status: :ok
             else
@@ -31,10 +32,9 @@ class MessagesController < ApplicationController
 
     # GET /applications/:application_token/chats/:chat_number/messages
     def index
-        get_chat
         if @chat
-            @messages = @chat.messages
-            if @messages.any?
+            @messages = Message.where(chat_id: @chat.number)
+            if @messages
                 render json: @messages, status: :ok
             else
                 render json: { error: "No messages found" }, status: :not_found
@@ -44,18 +44,28 @@ class MessagesController < ApplicationController
         end   
     end
 
+    # GET /applications/:application_token/chats/:chat_number/body/search
+    def search
+        query = params[:query]
+        puts "Query #{query}"
+        # chat_id = params[:chat_number]
+        # puts "CHat ID #{chat_id}"
+
+        @messages = Message.search(query, @chat.number).records
+        render json: @messages
+    end
     
     private
 
+    def get_application
+        @application = Application.find_by(token: params[:application_token])
+    end
+
     def get_chat
-        @application = Application.find_by(token: params[:application_id])
-        if @application
-            @chat = @application.chats.find_by(number: params[:chat_id])
-        end
+        @chat = @application.chats.find_by(number: params[:chat_number]) if @application
     end
 
     def message_params
-        params.require(:message).permit(:body)
+        params.permit(:body)
     end
-
 end

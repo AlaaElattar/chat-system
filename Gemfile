@@ -69,6 +69,9 @@ end
 gem 'uuid'
 gem 'bunny'
 gem 'sneakers'
-gem 'sidekiq'
+gem 'sidekiq', '~> 5.2.8'
 gem 'sidekiq-cron'
-
+gem 'mysql2'
+gem 'elasticsearch-model'
+gem 'elasticsearch-rails'
+gem 'redis-namespace'

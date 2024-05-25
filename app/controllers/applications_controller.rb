@@ -20,6 +20,13 @@ class ApplicationsController < ApplicationController
             render json: { error: 'Application not found' }, status: :not_found
         end
     end    
+
+    # TODO:
+    # GET /applications
+    # def index
+    #     render json: 
+
+    # end
         
 
     private
@@ -27,22 +34,4 @@ class ApplicationsController < ApplicationController
         params.require(:application).permit(:name)
     end
     
-    # def fetch_application(token)
-    #     # check if the application cached in redis
-    #     cached_application = $redis.get("application:#{token}")
-
-    #     # If exists return it to the user
-    #     if cached_application
-    #         application = JSON.parse(cached_application)
-    #     else
-    #         # If not exists, get it from database then cache it 
-    #         application = Application.find_by(token: token)
-    #         if application
-    #             $redis.set("application:#{token}", application.to_json, ex: 3600)
-    #         end    
-    #     end
-
-    #     application    
-    # end    
-
 end
