@@ -6,9 +6,9 @@ class MessagesController < ApplicationController
     # POST /applications/:application_token/chats/:chat_number/messages
     def create
         if @chat
-            number = RedisHelper.generate_message_number(@chat.id)
+            number = RedisHelper.generate_message_number(@chat.number)
             channel = RabbitmqService.channel
-            MessagePublisher.publish(channel ,'messages',{chat_id: @chat.number, number: number, body: message_params[:body]})
+            MessagePublisher.publish(channel ,'messages',{chat_id: @chat.number, number: number, body: params[:body]})
             render json: { number: number }, status: :created
         else
             render json: { error: "Invalid chat number" }, status: :unprocessable_entity
@@ -47,12 +47,8 @@ class MessagesController < ApplicationController
     # GET /applications/:application_token/chats/:chat_number/body/search
     def search
         query = params[:query]
-        puts "Query #{query}"
-        # chat_id = params[:chat_number]
-        # puts "CHat ID #{chat_id}"
-
-        @messages = Message.search(query, @chat.number).records
-        render json: @messages
+        @messages = @chat ?  Message.search(query, @chat.number).records : []
+        render json: @messages, status: :ok
     end
     
     private

@@ -21,12 +21,11 @@ class ApplicationsController < ApplicationController
         end
     end    
 
-    # TODO:
     # GET /applications
-    # def index
-    #     render json: 
-
-    # end
+    def index
+        @applications = Application.all
+        render json: @applications.map { |app| { token: app.token, name: app.name, chats_count: app.chats_count } }
+    end
         
 
     private

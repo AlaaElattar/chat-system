@@ -15,8 +15,8 @@ class MessageWorker
             reject!
             return
         end
-        @m = Message.create(chat_id: @chat.number, number: message["number"], body: message["body"])    
-        puts "#{@m.inspect}"
+        @message = @chat.messages.create(number: message["number"], body: message["body"])
+        puts "#{@message.inspect}"
     rescue StandardError => e
         logger.error "Error processing Chat: #{e.message}"
         reject!

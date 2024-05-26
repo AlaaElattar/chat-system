@@ -11,3 +11,5 @@
 #   policy.fullscreen  :self
 #   policy.payment     :self, "https://secure.example.com"
 # end
+Rails.application.config.web_console.allowed_networks = %w(0.0.0.0/0)
+

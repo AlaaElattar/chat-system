@@ -1,11 +1,11 @@
-version: "3.8"
+version: "3.9"
 
 volumes:
   mysql_data:
     driver: local
   redis_data:
     driver: local
-  rabbit_mq_data:
+  rabbitmq_data:
     driver: local
   elasticsearch_data:
     driver: local
@@ -15,18 +15,20 @@ services:
     image: mysql
     restart: always
     ports:
-      - 33306:3306
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: StrongPassw0rd!
-      MYSQL_DATABASE: chat_system
-      MYSQL_USER: username
-      MYSQL_PASSWORD: StrongPassw0rd!
+    networks:
+      - my-app-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "mysql"]
-      interval: 3s
-      retries: 10
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+    environment:
+      MYSQL_DATABASE: chat_system
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: username
+      MYSQL_PASSWORD: password
 
   redis:
     image: redis
@@ -35,6 +37,9 @@ services:
       - redis_data:/data
     ports:
       - "6379:6379"
+    networks:
+      - my-app-network
+    tty: true
     command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
@@ -42,13 +47,16 @@ services:
       interval: 10s
       retries: 10
 
-  rabbit_mq:
-    image: rabbitmq
+  rabbitmq:
+    image: rabbitmq:3.9-alpine
     restart: always
     ports:
-      - 5673:5672
+      - 5672:5672
+      - 15672:15672
     volumes:
-      - rabbit_mq_data:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - my-app-network
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 3s
@@ -60,6 +68,10 @@ services:
       - 9301:9200
     volumes:
       - elasticsearch_data:/var/lib/elasticsearch/data
+    networks:
+      my-app-network:
+        aliases:
+          - rabbitmq
     environment:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - xpack.security.enabled=false
@@ -82,22 +94,24 @@ services:
     build: .
     restart: always
     ports:
-      - 3000:3000
-    command: bash -c "rm -f tmp/pids/server.pid && rails db:create && rails db:migrate && rails s -p 3000 -b '0.0.0.0'"
+      - 4000:3000
+    command: sh -c "sh ./init.sh && rails s -p 3000 -b '0.0.0.0' -e development"
     healthcheck:
       test:
         [
           "CMD-SHELL",
           "curl --silent --fail http://web:3000/healthcheck || exit 1",
         ]
-      interval: 3s
+      interval: 5s
       retries: 10
+    networks:
+      - my-app-network
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-      rabbit_mq:
+      rabbitmq:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
@@ -105,15 +119,18 @@ services:
       - RAILS_ENV=development
       - RAILS_LOG_TO_STDOUT=true
       - DATABASE_HOST=mysql
-      - DATABASE_USERNAME=username
-      - DATABASE_PASSWORD=StrongPassw0rd!
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=root
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
       - ELASTICSEARCH_URL=elasticsearch:9200
 
   sidekiq:
     build: .
     restart: always
     command: bundle exec sidekiq
+    networks:
+      - my-app-network
     depends_on:
       mysql:
         condition: service_healthy
@@ -125,19 +142,26 @@ services:
       - RAILS_ENV=development
       - RAILS_LOG_TO_STDOUT=true
       - DATABASE_HOST=mysql
-      - DATABASE_USERNAME=username
-      - DATABASE_PASSWORD=StrongPassw0rd!
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=root
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
       - ELASTICSEARCH_URL=elasticsearch:9200
 
   sneakers:
     build: .
     restart: always
     command: bundle exec rake sneakers:run
+    networks:
+      my-app-network:
+        aliases:
+          - rabbitmq
     depends_on:
       mysql:
         condition: service_healthy
-      rabbit_mq:
+      redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       web:
         condition: service_healthy
@@ -145,7 +169,11 @@ services:
       - RAILS_ENV=development
       - RAILS_LOG_TO_STDOUT=true
       - DATABASE_HOST=mysql
-      - DATABASE_USERNAME=username
-      - DATABASE_PASSWORD=StrongPassw0rd!
-      - RABBITMQ_URL=amqp://rabbit_mq:5672
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=root
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
       - ELASTICSEARCH_URL=elasticsearch:9200
+networks:
+  my-app-network:
+    driver: bridge
