@@ -21,11 +21,13 @@ Chat System Application provides creating different applications, each one has i
 
 ### Features
 
-- <b>Chat Creation:</b>  Within each application, users can create multiple chats. Each chat has unique token identifies it.
+- <b>Chat Creation:</b>  Within each application, users can create multiple chats. Each chat has unique id identifies it.
 
 - <b>Message Exchange:</b> Users can send and receive messages within individual chats. Each message is assigned a unique number starting from 1 for each chat.
 
-- <b>Elasticsearch Integration:</b> The system provides full-text search functionality for messages using Elasticsearch. This allows users to search through messages based on their content.
+- <b> Message Queuing with Redis:</b> Message queuing with redis offers asynchronous communication between components enhancing system scalability, load balancing and performance. Redis message queuing also supports fault tolerance through message storage and delivery.  
+
+- <b>Elasticsearch Search:</b> The system provides full-text search functionality for messages using Elasticsearch. This allows users to search through messages based on their content.
 
 - <b>Background Job for Updating Counts:</b> Automated job to update counts of messages and chats regularly. This ensures that the counts of messages and chats are up-to-date and accurate.
 
@@ -35,7 +37,7 @@ Chat System Application provides creating different applications, each one has i
 ### Tables
 - <b> Application:</b> Contains information about applications, including their tokens, names, and chat counts.
 - <b> Chat:</b> Stores chats associated with applications, including their application id,  numbers and messages count.
-- <b> messages:</b> Contains messages sent within chats, including their chat id,  message numbers and bodies.
+- <b> Message:</b> Contains messages sent within chats, including their chat id,  message numbers and bodies.
 
 ## Technologies Used
 - **Ruby on Rails:** Backend framework for building the API and workers.
@@ -82,8 +84,6 @@ You need to have Docker installed on your machine in order to run the whole stac
   
 - **PUT /applications/:application_token**: Update details of a specific application.
   
-- **DELETE /applications/:application_token**: Delete a specific application.
-
 ### Chats
 
 - **GET /applications/:application_token/chats**: Retrieve a list of all chats for a specific application.
@@ -94,7 +94,6 @@ You need to have Docker installed on your machine in order to run the whole stac
   
 - **PUT /applications/:application_token/chats/:chat_number**: Update details of a specific chat.
   
-- **DELETE /applications/:application_token/chats/:chat_number**: Delete a specific chat.
 
 ### Messages
 
@@ -106,8 +105,6 @@ You need to have Docker installed on your machine in order to run the whole stac
   
 - **PUT /applications/:application_token/chats/:chat_number/messages/:message_number**: Update details of a specific message.
   
-- **DELETE /applications/:application_token/chats/:chat_number/messages/:message_number**: Delete a specific message.
-
 ### Search
 
 - **GET /applications/:application_token/chats/:chat_number/messages/search?query=:query**: Search for messages within a specific chat.

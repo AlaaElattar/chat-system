@@ -3,6 +3,6 @@ require 'sidekiq-cron'
 
 Sidekiq::Cron::Job.create(
   name: 'Synchronize Redis to MySQL - every 1 hour',
-  cron: '*/2 * * * *',
+  cron: '0 * * * *',
   class: 'SyncRedisMysql'
 )
