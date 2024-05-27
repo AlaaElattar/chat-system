@@ -84,11 +84,11 @@ You need to have Docker installed on your machine in order to run the whole stac
 
 - **POST /applications**: Create a new application.
   ```bash
-  curl -X POST http://0.0.0.0:4000/applications -H "Content-Type: application/json" -d '{"name": "New Application"}'
+  curl -X POST http://localhost:4000/applications -H "Content-Type: application/json" -d '{"name": "New Application"}'
   ```
   ```bash
   {
-    "token"; "app-token"
+    "token": "app-token"
   }
   ```
 - **GET /applications**: Retrieve a list of all applications.
@@ -113,7 +113,7 @@ You need to have Docker installed on your machine in order to run the whole stac
   ```
 - **GET /applications/:application_token**: Retrieve details of a specific application.
   ```bash
-  curl -X GET http://0.0.0.0:4000/applications/app-token1
+  curl -X GET http://localhost:4000/applications/app-token1
   ```
   ```bash
   {
