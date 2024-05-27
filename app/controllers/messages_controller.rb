@@ -3,6 +3,8 @@ class MessagesController < ApplicationController
     skip_before_action :verify_authenticity_token, only: [:create]
     before_action :get_application, :get_chat
 
+    # TODO: add linter
+
     # POST /applications/:application_token/chats/:chat_number/messages
     def create
         if @chat
@@ -29,17 +31,15 @@ class MessagesController < ApplicationController
         end
     end
 
-    # TODO: 
     # GET /applications/:application_token/chats/:chat_number/messages
     def index
-        @messages = Message.where(chat_id: params[:chat_number])
-        render json: @messages, status: :ok   
+        render json: @chat.messages, status: :ok   
     end
 
     # GET /applications/:application_token/chats/:chat_number/messages/search?query=:query
     def search
         query = params[:query]
-        @messages = @chat ?  Message.search(query, @chat.number).records : []
+        @messages = Message.search(query, @chat.id).records
         render json: @messages, status: :ok
     end
     

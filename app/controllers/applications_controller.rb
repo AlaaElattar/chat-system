@@ -19,7 +19,7 @@ class ApplicationsController < ApplicationController
 
     # GET /applications
     def index
-        @applications = Application.select(:token, :name, :chats_count)
+        @applications = Application.select(:token, :name, :chats_count, :id)
         render json: @applications
     end
 

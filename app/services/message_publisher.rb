@@ -3,7 +3,7 @@ require 'bunny'
 class MessagePublisher
 
   def self.publish(channel, exchange, message)
-    puts "Publishing message to exchange: #{exchange}"
+    puts "Publishing message to queue: #{exchange}"
     x = channel.queue(exchange, durable: true)
     x.publish(message.to_json, routing_key: x.name)
     puts "Message: #{message.to_json}"
