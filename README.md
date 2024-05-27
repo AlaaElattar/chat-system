@@ -20,6 +20,7 @@ Chat System Application provides creating different applications, each one has i
 
 
 ### Features
+- <b> Application Creation:</b> Users can create many apps each one with its chats and messages. Each Application is identified by unique token.
 
 - <b>Chat Creation:</b>  Within each application, users can create multiple chats. Each chat has unique id identifies it.
 
