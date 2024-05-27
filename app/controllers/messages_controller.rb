@@ -8,8 +8,12 @@ class MessagesController < ApplicationController
         if @chat
             number = RedisHelper.generate_message_number(@chat.number)
             channel = RabbitmqService.channel
-            MessagePublisher.publish(channel ,'messages',{chat_id: @chat.number, number: number, body: params[:body]})
-            render json: { number: number }, status: :created
+            begin
+                MessagePublisher.publish(channel ,'messages',{chat_id: @chat.number, number: number, body: params[:body]})
+                render json: { number: number }, status: :created
+            rescue => e
+                render json: { error: "Failed to publish message: #{e.message}" }, status: :internal_server_error
+            end            
         else
             render json: { error: "Invalid chat number" }, status: :unprocessable_entity
         end
@@ -17,34 +21,22 @@ class MessagesController < ApplicationController
 
     # GET /applications/:application_token/chats/:chat_number/messages/:number
     def show
-        if @chat
-            puts "Number #{params[:number]}"
-            @message = Message.find_by(chat_id: @chat.number, number: params[:number])
-            if @message
-                render json: @message, status: :ok
-            else
-                render json: { error: "Message not found" }, status: :not_found  
-            end
+        @message = Message.find_by(number: params[:number])
+        if @message
+            render json: @message, status: :ok
         else
-            render json: { error: "Invalid chat number" }, status: :unprocessable_entity
+            render json: { error: "Message not found" }, status: :not_found  
         end
     end
 
+    # TODO: 
     # GET /applications/:application_token/chats/:chat_number/messages
     def index
-        if @chat
-            @messages = Message.where(chat_id: @chat.number)
-            if @messages
-                render json: @messages, status: :ok
-            else
-                render json: { error: "No messages found" }, status: :not_found
-            end    
-        else 
-            render json: { error: "Invalid chat number" }, status: :unprocessable_entity
-        end   
+        @messages = Message.where(chat_id: params[:chat_number])
+        render json: @messages, status: :ok   
     end
 
-    # GET /applications/:application_token/chats/:chat_number/body/search
+    # GET /applications/:application_token/chats/:chat_number/messages/search?query=:query
     def search
         query = params[:query]
         @messages = @chat ?  Message.search(query, @chat.number).records : []
@@ -59,6 +51,7 @@ class MessagesController < ApplicationController
 
     def get_chat
         @chat = @application.chats.find_by(number: params[:chat_number]) if @application
+        render json: { error: 'Invalid chat number' }, status: :unprocessable_entity unless @chat
     end
 
     def message_params

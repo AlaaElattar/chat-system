@@ -1,5 +1,6 @@
 class ApplicationsController < ApplicationController
     protect_from_forgery with: :null_session, if: -> { request.format.json? }
+    before_action :get_application, only: [:show]
 
     # POST /applications
     def create
@@ -13,24 +14,28 @@ class ApplicationsController < ApplicationController
     
     # GET /applications/:token
     def show
-        @application = Application.find_by(token: params[:token])
-        if @application
-            render json: { token: @application.token, name: @application.name, chats_count: @application.chats_count }
-        else
-            render json: { error: 'Application not found' }, status: :not_found
-        end
+        render json: @application.slice(:token, :name, :chats_count)        
     end    
 
     # GET /applications
     def index
-        @applications = Application.all
-        render json: @applications.map { |app| { token: app.token, name: app.name, chats_count: app.chats_count } }
+        @applications = Application.select(:token, :name, :chats_count)
+        render json: @applications
     end
-        
 
+    
     private
+
+    def get_application
+        @application = Application.find_by!(token: params[:token])
+    end
+
     def application_params
         params.require(:application).permit(:name)
+    end
+
+    def record_not_found
+        render json: { error: 'Application not found' }, status: :not_found
     end
     
 end
