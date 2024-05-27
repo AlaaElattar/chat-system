@@ -68,9 +68,9 @@ You need to have Docker installed on your machine in order to run the whole stac
    ```sh
    git clone https://github.com/AlaaElattar/chat-system
    ```
-2. Run the whole stack using docker compose
+2. Run the whole stack using docker compose. By default, the environment is set to development. You can specify custom environment variables and options using the --env flag. RAILS_ENV can be set to development, test, or production.
     ```sh
-   docker compose up --build
+   docker compose up --build --env RAILS_ENV=production --env MYSQL_DATABASE=my_database
    ```
 
 ## API Endpoints

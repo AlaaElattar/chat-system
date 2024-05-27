@@ -25,7 +25,7 @@ services:
       interval: 10s
       retries: 5
     environment:
-      MYSQL_DATABASE: chat_system
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-chat_system}
       MYSQL_ROOT_PASSWORD: root
       MYSQL_USER: username
       MYSQL_PASSWORD: password
@@ -116,7 +116,7 @@ services:
       elasticsearch:
         condition: service_healthy
     environment:
-      - RAILS_ENV=development
+      - RAILS_ENV=${RAILS_ENV:-development}
       - RAILS_LOG_TO_STDOUT=true
       - DATABASE_HOST=mysql
       - DATABASE_USERNAME=root

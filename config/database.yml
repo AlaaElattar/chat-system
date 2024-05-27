@@ -2,31 +2,20 @@ default: &default
   adapter: mysql2
   encoding: utf8mb4
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 20 } %>
-  database: chat_system
+  database: <%= ENV['MYSQL_DATABASE'] %>
   username: <%= ENV['DATABASE_USER'] %>
   password: <%= ENV['DATABASE_PASSWORD'] %>
   host: <%= ENV['DATABASE_HOST'] %>
   socket: /var/run/mysqld/mysqld.sock
 
-# default: &default
-#   adapter: mysql2
-#   encoding: utf8mb4
-#   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 20 } %>
-#   database: chat_system
-#   username: username
-#   password: password
-#   host: localhost
-#   socket: /var/run/mysqld/mysqld.sock
-
-
 development:
   <<: *default
-  database: chat_system
+  database: chat_system_development
 
 test:
   <<: *default
-  database: chat_system
+  database: chat_system_test
 
 production:
   <<: *default
-  database: chat_system
+  database: chat_system_production
